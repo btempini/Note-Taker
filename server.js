@@ -1,6 +1,9 @@
 const express = require("express");
 const notesData = require("./db/db.json");
 const path = require("path");
+const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
+const { fstat } = require("fs");
 const PORT = 3001;
 
 //Initiate
@@ -23,6 +26,42 @@ app.get("/notes", (req, res) => {
 
 app.get("/api/notes", (req, res) => {
   res.json(notesData);
+});
+
+app.post("/api/notes", (req, res) => {
+  const { title, text } = req.body;
+  if (title && text) {
+    const newNote = {
+      title,
+      text,
+      note_id: uuidv4(),
+    };
+
+    const newNoteString = JSON.stringify(newNote);
+
+    fs.readFile("./db/db.json", function (err, data) {
+      var json = JSON.parse(newNote);
+      json.push(notesData);
+      console.log(json);
+      fs.writeFile("./db/db.json", JSON.stringify(json), function (err) {
+        if (err) throw err;
+        console.log('The "data to append" was appended to file!');
+      });
+    });
+
+    //return new note to client?
+    let response;
+
+    if (req.body && req.body.text) {
+      response = {
+        status: "success",
+        body: req.body,
+      };
+      res.status(201).json(response);
+    } else {
+      res.status(500).json("Error in posting note.");
+    }
+  }
 });
 
 app.listen(PORT, () => {
