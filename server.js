@@ -40,9 +40,8 @@ app.post("/api/notes", (req, res) => {
     const newNoteString = JSON.stringify(newNote);
 
     fs.readFile("./db/db.json", function (err, data) {
-      var json = JSON.parse(newNote);
-      json.push(notesData);
-      console.log(json);
+      var json = JSON.parse(newNoteString);
+      // notesData.push(json);
       fs.writeFile("./db/db.json", JSON.stringify(json), function (err) {
         if (err) throw err;
         console.log('The "data to append" was appended to file!');
