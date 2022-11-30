@@ -3,7 +3,7 @@ const notesData = require("./db/db.json");
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
-const { fstat } = require("fs");
+const { json } = require("express");
 const PORT = 3001;
 
 //Initiate
@@ -12,7 +12,6 @@ const app = express();
 //Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
 app.use(express.static("public"));
 
 //Routes
@@ -25,7 +24,14 @@ app.get("/notes", (req, res) => {
 });
 
 app.get("/api/notes", (req, res) => {
-  res.json(notesData);
+  fs.readFile("./db/db.json", "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+    } else {
+      const newData = JSON.parse(data);
+      res.json(newData);
+    }
+  });
 });
 
 app.post("/api/notes", (req, res) => {
@@ -37,29 +43,31 @@ app.post("/api/notes", (req, res) => {
       note_id: uuidv4(),
     };
 
-    const newNoteString = JSON.stringify(newNote);
-
-    fs.readFile("./db/db.json", function (err, data) {
-      var json = JSON.parse(newNoteString);
-      // notesData.push(json);
-      fs.writeFile("./db/db.json", JSON.stringify(json), function (err) {
-        if (err) throw err;
-        console.log('The "data to append" was appended to file!');
-      });
+    fs.readFile("./db/db.json", "utf-8", (err, data) => {
+      if (err) {
+        console.error(err);
+      } else {
+        const parsedNotes = JSON.parse(data);
+        parsedNotes.push(newNote);
+        fs.writeFile(
+          "./db/db.json",
+          JSON.stringify(parsedNotes, null, 2),
+          (writeErr) => {
+            writeErr
+              ? console.error(writeErr)
+              : console.info("successfully added note");
+          }
+        );
+      }
     });
 
-    //return new note to client?
-    let response;
-
-    if (req.body && req.body.text) {
-      response = {
-        status: "success",
-        body: req.body,
-      };
-      res.status(201).json(response);
-    } else {
-      res.status(500).json("Error in posting note.");
-    }
+    const response = {
+      status: "success",
+      body: notesData,
+    };
+    res.status(201).json(response);
+  } else {
+    res.status(500).json("Error in posting review");
   }
 });
 
