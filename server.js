@@ -1,5 +1,5 @@
 const express = require("express");
-const notesData = require("./db/db.json");
+let notesData = require("./db/db.json");
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
@@ -40,7 +40,7 @@ app.post("/api/notes", (req, res) => {
     const newNote = {
       title,
       text,
-      note_id: uuidv4(),
+      id: uuidv4(),
     };
 
     fs.readFile("./db/db.json", "utf-8", (err, data) => {
@@ -67,7 +67,35 @@ app.post("/api/notes", (req, res) => {
     };
     res.status(201).json(response);
   } else {
-    res.status(500).json("Error in posting review");
+    res.status(500).json("Error in posting note");
+  }
+});
+
+app.delete("/api/notes/:id", (req, res) => {
+  console.log("FIRST", notesData);
+  notesData = JSON.parse(fs.readFileSync("./db/db.json", "utf-8"));
+
+  console.log("SECOND", notesData);
+  const found = notesData.some((note) => {
+    return note.id == req.params.id;
+  });
+  if (found) {
+    console.log("found", found);
+    notesData = notesData.filter((note) => note.id !== req.params.id);
+    console.log("filter:", notesData);
+    fs.writeFile(
+      "./db/db.json",
+      JSON.stringify(notesData, null, 2),
+      (writeErr) => {
+        writeErr
+          ? console.error(writeErr)
+          : console.info("successfully deleted");
+      }
+    );
+    res.json(notesData);
+  } else {
+    console.log("baloni");
+    res.status(500).json("Error deleting note");
   }
 });
 
